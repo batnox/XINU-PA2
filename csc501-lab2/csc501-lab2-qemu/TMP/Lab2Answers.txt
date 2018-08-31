@@ -1,0 +1,52 @@
+hkshah5
+Henil Shah
+
+1.
+a)
+Solution to priority inversion:
+We can randomly increase priority of some threads in ready queue that are starving and have been holding a lock for more than a threshold amount of time. This reduces the processing time compared to priority inheritance approach and can give decent performance. This is an approach used in Microsoft Windows.
+
+Reference:
+https://msdn.microsoft.com/en-us/library/windows/desktop/ms684831(v=vs.85).aspx
+
+There are other methos to mitigate priority inversion. Some of them set the priority of the process to a predefined high value as long as it acquires a lock. This method is called priority ceiling.
+
+
+b)
+ In the task1.c testcase I run two processes that share a lock and 3 other processes that have no locking. 
+Original prioriy order for lock A < C < B. Priority order in semaphores is C<E<D. 
+In locking process A has lower priority and B has higher priority. They both are writer and share a lock. Since B has higher prioirity - A bumps up to higher priority and executes before C.
+I need to put a sleep timer in the beginning of the locking process so that I can make sure that the order of acquiring is B after A. Because of this sleep timer, C runs before B. If we have a bigger process we will observe that B runs before C and finish early.
+
+In the case of semaphore, the lower priority locking process C never runs before E and therefore D will never finish early
+
+
+=================================LOCK=======================================================================================
+  A: to acquire lock
+  B: to acquire lock
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlock  A: acquired lock PRIOIRTY 50 //original priority = 20
+lock  A: time waited 0
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC  C: done //no locking
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC  C: done //no locking
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC  C: done // no locking
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBlock  B: acquired lock PRIOIRTY 50
+lock  B: time waited 20
+
+============================================SEMAPHORE=========================================================================
+  C: to acquire lock
+  D: to acquire lock
+EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE  E: done //no sem
+EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE  E: done //no sem
+EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE  E: done //no sem
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCsem  C: acquired lock PRIOIRTY 20 
+sem  C: time waitedi 0
+DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDsem  D: acquired lock PRIOIRTY 50
+sem  D: time waitedi 20
+
+
+2.
+
+Since the LOCK_READER is a reader lock ,multiple threads can access it simultaneously. Also global_semaphore allows 10 threads to access the critical section simultaneously.
+
+Now if have two threads A and B. They both successfully acquire global_semaphore. First thread A is scheduled and runs till memcpy statement. Now B is scheduled and starts executing buff_add. Since A did not execute the statement updating buf->len, length is not updated. Therefore B will overwrite the data that A copied in the buffer, starting from the position that the old value of length indicicated. 
+
